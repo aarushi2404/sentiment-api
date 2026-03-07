@@ -22,14 +22,24 @@ class SentimentRequest(BaseModel):
 def get_sentiment(text: str) -> str:
     text = text.lower()
 
-    positive = ["love", "good", "great", "awesome", "amazing", "happy", "excellent"]
-    negative = ["sad", "bad", "terrible", "awful", "hate", "worst", "horrible"]
+    positive_words = [
+        "love","like","good","great","awesome","amazing","happy",
+        "excellent","fantastic","nice","wonderful","enjoy",
+        "pleased","delight","best"
+    ]
 
-    if any(word in text for word in positive):
-        return "happy"
+    negative_words = [
+        "sad","bad","terrible","awful","hate","worst",
+        "horrible","angry","upset","disappointed",
+        "poor","disgusting","annoying","painful"
+    ]
 
-    if any(word in text for word in negative):
+    # Check negative first
+    if any(word in text for word in negative_words):
         return "sad"
+
+    if any(word in text for word in positive_words):
+        return "happy"
 
     return "neutral"
 
@@ -43,25 +53,21 @@ def analyze(sentences):
     }
 
 
-# Main endpoint
 @app.post("/sentiment")
 def sentiment_endpoint(request: SentimentRequest):
     return analyze(request.sentences)
 
 
-# ALSO accept POST on root (many evaluators call this)
 @app.post("/")
 def sentiment_root(request: SentimentRequest):
     return analyze(request.sentences)
 
 
-# Simple health check
 @app.get("/")
 def health():
     return {"message": "Sentiment API running"}
 
 
-# Render support
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port)
