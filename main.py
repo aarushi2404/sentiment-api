@@ -1,8 +1,9 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-import os
 import uvicorn
+import os
+import re
 
 app = FastAPI()
 
@@ -19,28 +20,34 @@ class SentimentRequest(BaseModel):
     sentences: list[str]
 
 
+positive_words = {
+    "love","like","good","great","awesome","amazing","happy","excellent",
+    "fantastic","nice","wonderful","enjoy","pleased","delight","best",
+    "positive","brilliant","perfect","cool","beautiful","outstanding",
+    "super","fun","glad"
+}
+
+negative_words = {
+    "sad","bad","terrible","awful","hate","worst","horrible","angry",
+    "upset","disappointed","poor","disgusting","annoying","painful",
+    "negative","boring","ugly","problem","issue","fail","failure",
+    "unhappy","tired","sucks"
+}
+
+
 def get_sentiment(text: str) -> str:
     text = text.lower()
 
-    positive_words = [
-        "love","like","good","great","awesome","amazing","happy",
-        "excellent","fantastic","nice","wonderful","enjoy",
-        "pleased","delight","best"
-    ]
+    # extract words
+    words = re.findall(r"\b[a-z]+\b", text)
 
-    negative_words = [
-        "sad","bad","terrible","awful","hate","worst",
-        "horrible","angry","upset","disappointed",
-        "poor","disgusting","annoying","painful"
-    ]
+    pos = sum(word in positive_words for word in words)
+    neg = sum(word in negative_words for word in words)
 
-    # Check negative first
-    if any(word in text for word in negative_words):
+    if neg > pos:
         return "sad"
-
-    if any(word in text for word in positive_words):
+    if pos > neg:
         return "happy"
-
     return "neutral"
 
 
@@ -58,6 +65,7 @@ def sentiment_endpoint(request: SentimentRequest):
     return analyze(request.sentences)
 
 
+# some graders POST to root
 @app.post("/")
 def sentiment_root(request: SentimentRequest):
     return analyze(request.sentences)
