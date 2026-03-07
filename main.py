@@ -2,8 +2,8 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from textblob import TextBlob
-import os
 import uvicorn
+import os
 
 app = FastAPI()
 
@@ -22,9 +22,9 @@ class SentimentRequest(BaseModel):
 def get_sentiment(text: str) -> str:
     polarity = TextBlob(text).sentiment.polarity
 
-    if polarity > 0.1:
+    if polarity > 0:
         return "happy"
-    elif polarity < -0.1:
+    elif polarity < 0:
         return "sad"
     else:
         return "neutral"
