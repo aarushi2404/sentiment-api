@@ -6,7 +6,7 @@ import uvicorn
 
 app = FastAPI()
 
-# Enable CORS so external evaluators can access the API
+# Enable CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -15,15 +15,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Root endpoint (fixes the 404 issue)
+@app.get("/")
+def root():
+    return {"message": "Sentiment API is running"}
+
 # Request model
 class SentimentRequest(BaseModel):
     sentences: list[str]
 
-# Sentiment logic
+# Sentiment function
 def get_sentiment(text: str) -> str:
     text = text.lower()
 
-    positive = ["love","good","great","awesome","amazing","happy","excellent","fantastic"]
+    positive = ["love","good","great","awesome","amazing","happy","excellent"]
     negative = ["sad","bad","terrible","awful","hate","worst","horrible"]
 
     if any(word in text for word in positive):
@@ -34,22 +39,22 @@ def get_sentiment(text: str) -> str:
 
     return "neutral"
 
-
+# Sentiment endpoint
 @app.post("/sentiment")
 def batch_sentiment(request: SentimentRequest):
 
-    return {
-        "results": [
-            {
-                "sentence": sentence,
-                "sentiment": get_sentiment(sentence)
-            }
-            for sentence in request.sentences
-        ]
-    }
+    results = []
+
+    for sentence in request.sentences:
+        results.append({
+            "sentence": sentence,
+            "sentiment": get_sentiment(sentence)
+        })
+
+    return {"results": results}
 
 
-# Required for Render
+# For Render
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port)
