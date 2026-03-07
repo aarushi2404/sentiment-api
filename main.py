@@ -1,13 +1,12 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-import uvicorn
+from textblob import TextBlob
 import os
-import re
+import uvicorn
 
 app = FastAPI()
 
-# Enable CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -20,35 +19,15 @@ class SentimentRequest(BaseModel):
     sentences: list[str]
 
 
-positive_words = {
-    "love","like","good","great","awesome","amazing","happy","excellent",
-    "fantastic","nice","wonderful","enjoy","pleased","delight","best",
-    "positive","brilliant","perfect","cool","beautiful","outstanding",
-    "super","fun","glad"
-}
-
-negative_words = {
-    "sad","bad","terrible","awful","hate","worst","horrible","angry",
-    "upset","disappointed","poor","disgusting","annoying","painful",
-    "negative","boring","ugly","problem","issue","fail","failure",
-    "unhappy","tired","sucks"
-}
-
-
 def get_sentiment(text: str) -> str:
-    text = text.lower()
+    polarity = TextBlob(text).sentiment.polarity
 
-    # extract words
-    words = re.findall(r"\b[a-z]+\b", text)
-
-    pos = sum(word in positive_words for word in words)
-    neg = sum(word in negative_words for word in words)
-
-    if neg > pos:
-        return "sad"
-    if pos > neg:
+    if polarity > 0.1:
         return "happy"
-    return "neutral"
+    elif polarity < -0.1:
+        return "sad"
+    else:
+        return "neutral"
 
 
 def analyze(sentences):
@@ -65,7 +44,6 @@ def sentiment_endpoint(request: SentimentRequest):
     return analyze(request.sentences)
 
 
-# some graders POST to root
 @app.post("/")
 def sentiment_root(request: SentimentRequest):
     return analyze(request.sentences)
